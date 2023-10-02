@@ -32,5 +32,15 @@ params = {
 print(client.get_rows(params)) 
 ```
 
+## Streaming rows
+##### Row requests are broken up into batches past a certain size. If you don't want to wait for all your requests to finish before receiving any data, you can use this:
+
+
+```python
+batches = client.batch_rows(params)  
+for df in client.stream_rows(batches):
+  print(df)
+```
+
 ## License
 Copyright 2023 Velo Data, license MIT

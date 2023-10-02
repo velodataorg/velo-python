@@ -32,7 +32,7 @@ class client:
         request = self.session.get(self.base_url + product_type, headers=self.headers).text
         
         try:
-            return pd.read_csv(io.StringIO(request)).values.tolist()
+            return pd.read_csv(io.StringIO(request)).to_dict('records')
         except:
             print("Please check that you have provided a product_type of futures, spot, or options.")
             raise Exception(request)

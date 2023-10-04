@@ -47,16 +47,18 @@ class client:
         return self.get_products('spot')
 
     def batch_rows(self, params: dict):
+        split_params = copy.deepcopy(params)
         count = (math.ceil((params['end'] - params['begin']) / (1000 * 60 * params['resolution'])) *
                     len(params['exchanges']) * len(params['products']) * len(params['columns']))
         
-        
         if count <= 22500:
-            return [params]
+            split_params['columns'] = (",").join(params['columns'])
+            split_params['exchanges'] = (",").join(params['exchanges'])
+            split_params['products'] = (",").join(params['products'])
+            return [split_params]
         
         count = 22500 / len(params['exchanges']) / len(params['products']) / len(params['columns'])
         
-        split_params = copy.deepcopy(params)
         split_params['columns'] = (",").join(params['columns'])
         split_params['exchanges'] = (",").join(params['exchanges'])
         split_params['products'] = (",").join(params['products'])
@@ -76,8 +78,6 @@ class client:
             batches.append(step)
             
         return batches
-        
-    
     
     def stream_rows(self, params: dict):        
         for param in params:
@@ -88,7 +88,7 @@ class client:
             
     def get_rows(self, params: dict):
         batches = self.batch_rows(params)        
-                    
+        
         rows = pd.DataFrame()
         for param in batches:            
             try:
@@ -100,3 +100,88 @@ class client:
                 raise Exception(request)
     
         return rows
+    
+    def timestamp(self):
+        return math.floor(time.time() * 1000)
+    
+    def get_futures_columns(self):
+        return [
+            'open_price',
+            'high_price',
+            'low_price',
+            'close_price',
+            'coin_volume',
+            'dollar_volume',
+            'buy_trades',
+            'sell_trades',
+            'total_trades',
+            'buy_coin_volume',
+            'sell_coin_volume',
+            'buy_dollar_volume',
+            'sell_dollar_volume',
+            'coin_open_interest_high',
+            'coin_open_interest_low',
+            'coin_open_interest_close',
+            'dollar_open_interest_high',
+            'dollar_open_interest_low',
+            'dollar_open_interest_close',
+            'funding_rate',
+            'premium',
+            'buy_liquidations',
+            'sell_liquidations',
+            'buy_liquidations_coin_volume',
+            'sell_liquidations_coin_volume',
+            'liquidations_coin_volume',
+            'buy_liquidations_dollar_volume',
+            'sell_liquidations_dollar_volume',
+            'liquidations_dollar_volume'
+        ]
+    
+    def get_options_columns(self):
+        return [
+            'iv_1w',
+            'iv_1m',
+            'iv_3m',
+            'iv_6m',
+            'skew_1w',
+            'skew_1m',
+            'skew_3m',
+            'skew_6m',
+            'vega_coins',
+            'vega_dollars',
+            'call_delta_coins',
+            'call_delta_dollars',
+            'put_delta_coins',
+            'put_delta_dollars',
+            'gamma_coins',
+            'gamma_dollars',
+            'call_volume',
+            'call_premium',
+            'call_notional',
+            'put_volume',
+            'put_premium',
+            'put_notional',
+            'dollar_volume'
+            'dvol_open',
+            'dvol_high',
+            'dvol_low',
+            'dvol_close',
+            'index_price'
+        ]
+    
+    def get_spot_columns(self):
+        return [
+            'open_price',
+            'high_price',
+            'low_price',
+            'close_price',
+            'coin_volume',
+            'dollar_volume',
+            'buy_trades',
+            'sell_trades',
+            'total_trades',
+            'buy_coin_volume',
+            'sell_coin_volume',
+            'buy_dollar_volume',
+            'sell_dollar_volume',
+        ]

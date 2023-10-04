@@ -21,4 +21,4 @@ params = {
     }
     
 # returns dataframe
-client.get_rows(params)
+print(client.get_rows(params))

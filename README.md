@@ -1,5 +1,5 @@
 # velo-python
-Python library for Velo API access see full documentation [here](https://velodata.gitbook.io/velo-data-api/nodejs).
+Python library for Velo API access. [See full documentation here](https://velodata.gitbook.io/velo-data-api/python).
 
 ## Install
 ```
@@ -31,7 +31,7 @@ params = {
     }
     
 # returns dataframe
-client.get_rows(params)
+print(client.get_rows(params))
 ```
 
 ## Streaming rows

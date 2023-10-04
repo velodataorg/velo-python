@@ -161,7 +161,7 @@ class client:
             'put_volume',
             'put_premium',
             'put_notional',
-            'dollar_volume'
+            'dollar_volume',
             'dvol_open',
             'dvol_high',
             'dvol_low',

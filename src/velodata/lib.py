@@ -57,7 +57,7 @@ class client:
             split_params['products'] = (",").join(params['products'])
             return [split_params]
         
-        count = 22500 / len(params['exchanges']) / len(params['products']) / len(params['columns'])
+        count = math.floor(22500 / len(params['exchanges']) / len(params['products']) / len(params['columns']))
         
         split_params['columns'] = (",").join(params['columns'])
         split_params['exchanges'] = (",").join(params['exchanges'])

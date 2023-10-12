@@ -47,21 +47,43 @@ class client:
         return self.get_products('spot')
 
     def batch_rows(self, params: dict):
+        coins = False
+
         split_params = copy.deepcopy(params)
+        if '3m_basis_ann' in params['columns']:
+            if 'products' in params or 'exchanges' in params:
+                return "To request basis data, please only specify coins. No products or exchanges should be specified."
+            split_params['exchanges'] = ['']
+            len_exchanges = 3
+        else:
+            len_exchanges = len(params['exchanges'])
+        
+        if 'coins' in params:
+            if 'products' in params:
+                del split_params['coins']
+            else:
+                split_params['products'] = split_params.pop('coins')
+                coins = True            
+            
         count = (math.ceil((params['end'] - params['begin']) / (1000 * 60 * params['resolution'])) *
-                    len(params['exchanges']) * len(params['products']) * len(params['columns']))
+                    len_exchanges * len(split_params['products']) * len(params['columns']))
         
         if count <= 22500:
             split_params['columns'] = (",").join(params['columns'])
-            split_params['exchanges'] = (",").join(params['exchanges'])
-            split_params['products'] = (",").join(params['products'])
+            split_params['exchanges'] = (",").join(split_params['exchanges'])
+            split_params['products'] = (",").join(split_params['products'])
+            if coins:
+                split_params['coins'] = split_params.pop('products')
             return [split_params]
         
-        count = math.floor(22500 / len(params['exchanges']) / len(params['products']) / len(params['columns']))
+        count = math.floor(22500 / len_exchanges / len(split_params['products']) / len(params['columns']))
         
         split_params['columns'] = (",").join(params['columns'])
-        split_params['exchanges'] = (",").join(params['exchanges'])
-        split_params['products'] = (",").join(params['products'])
+        split_params['exchanges'] = (",").join(split_params['exchanges'])
+        split_params['products'] = (",").join(split_params['products'])
+
+        if coins:
+            split_params['coins'] = split_params.pop('products')
         
         batches = []
         step = copy.deepcopy(split_params)
@@ -76,7 +98,7 @@ class client:
             step['end'] = step['begin'] + ((1000 * 60 * params['resolution']) * count)
             step['end'] = round(min(step['end'], params['end']))
             batches.append(step)
-            
+
         return batches
     
     def stream_rows(self, params: dict):        
@@ -100,6 +122,31 @@ class client:
                 raise Exception(request)
     
         return rows
+
+    def get_market_caps(self, coins):
+        coins = {'coins' : (',').join(coins)}
+        
+        try:
+            request = self.http_get(self.base_url + 'caps', params=coins, headers=self.headers)
+            rows = pd.read_csv(io.StringIO(request))
+        except: 
+            print("Please ensure you have passed all required params properly.")
+            raise Exception(request)
+
+        return rows
+
+    def get_term_structure(self, coins):
+        coins = {'coins' : (',').join(coins)}
+
+        try:
+            request = self.http_get(self.base_url + 'terms', params=coins, headers=self.headers)
+            rows = pd.read_csv(io.StringIO(request))
+        except: 
+            print("Please ensure you have passed all required params properly.")
+            raise Exception(request)
+
+        return rows
+    
     
     def timestamp(self):
         return math.floor(time.time() * 1000)

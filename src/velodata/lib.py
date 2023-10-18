@@ -35,7 +35,7 @@ class client:
             return pd.read_csv(io.StringIO(request)).to_dict('records')
         except:
             print("Please check that you have provided a product_type of futures, spot, or options.")
-            raise Exception(request)
+            raise Exception(request.content)
 
     def get_futures(self):
         return self.get_products('futures')
@@ -119,7 +119,7 @@ class client:
                 time.sleep(0.1)
             except:
                 print("Please ensure you have passed all required params properly.")
-                raise Exception(request)
+                raise Exception(request.content)
     
         return rows
 
@@ -131,7 +131,7 @@ class client:
             rows = pd.read_csv(io.StringIO(request))
         except: 
             print("Please ensure you have passed all required params properly.")
-            raise Exception(request)
+            raise Exception(request.content)
 
         return rows
 
@@ -143,7 +143,7 @@ class client:
             rows = pd.read_csv(io.StringIO(request))
         except: 
             print("Please ensure you have passed all required params properly.")
-            raise Exception(request)
+            raise Exception(request.content)
 
         return rows
     

@@ -103,10 +103,17 @@ class client:
     
     def stream_rows(self, params: dict):        
         for param in params:
-            request = self.http_get(self.base_url + 'rows', params=param, headers=self.headers)
-            rows = pd.read_csv(io.StringIO(request))
-            yield rows
-            time.sleep(0.1)
+            try:
+                request = self.http_get(self.base_url + 'rows', params=param, headers=self.headers)
+                rows = pd.read_csv(io.StringIO(request))
+                yield rows
+                time.sleep(0.1)
+            except Exception as e:
+                if 'No columns to parse from file' not in str(e):
+                    print("Please ensure you have passed all required params properly.")
+                    raise Exception(request.content)
+                else:
+                    yield pd.DataFrame()
             
     def get_rows(self, params: dict):
         batches = self.batch_rows(params)        
@@ -117,9 +124,12 @@ class client:
                 request = self.http_get(self.base_url + 'rows', params=param, headers=self.headers)
                 rows = pd.concat([rows, pd.read_csv(io.StringIO(request))])
                 time.sleep(0.1)
-            except:
-                print("Please ensure you have passed all required params properly.")
-                raise Exception(request.content)
+            except Exception as e:
+                if 'No columns to parse from file' not in str(e):
+                    print("Please ensure you have passed all required params properly.")
+                    raise Exception(request.content)
+                else:
+                    yield pd.DataFrame()
     
         return rows
 

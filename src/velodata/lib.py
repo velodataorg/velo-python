@@ -129,7 +129,7 @@ class client:
                     print("Please ensure you have passed all required params properly.")
                     raise Exception(request.content)
                 else:
-                    return pd.DataFrame()
+                    rows = pd.concat([rows, pd.DataFrame()])
     
         return rows
 

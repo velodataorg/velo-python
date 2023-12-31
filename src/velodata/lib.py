@@ -129,7 +129,7 @@ class client:
                     print("Please ensure you have passed all required params properly.")
                     raise Exception(request.content)
                 else:
-                    yield pd.DataFrame()
+                    return pd.DataFrame()
     
         return rows
 

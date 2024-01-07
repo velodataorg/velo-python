@@ -17,6 +17,7 @@ class client:
         self.headers = {"Authorization": self.key}
         self.session = requests.Session()
         self.news = self
+        self.ws = None
         
     def http_get(self, base_url, headers, params={}):
         request = self.session.get(base_url, params=params, headers=headers)
@@ -58,6 +59,10 @@ class client:
                 except:
                     yield 'closed'
                     return
+
+    async def close_stream(self):
+        if(self.ws):
+            await self.ws.close()
         
     def get_products(self, product_type: str):        
         request = self.session.get(self.base_url + product_type, headers=self.headers).text

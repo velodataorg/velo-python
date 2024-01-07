@@ -58,13 +58,16 @@ class client:
                         yield reply
 
                 except:
+                    await websocket.close()
+                    self.ws = None
                     yield 'closed'
                     return
 
     async def close_stream(self):
         if(self.ws):
             await self.ws.close()
-        
+            self.ws = None
+
     def get_products(self, product_type: str):        
         request = self.session.get(self.base_url + product_type, headers=self.headers).text
         

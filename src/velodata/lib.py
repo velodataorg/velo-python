@@ -5,13 +5,19 @@ import base64
 import pandas as pd
 import io 
 import copy
+import json
+import websockets
 
 class client:
     def __init__(self, key):
         self.key = "Basic " + str(base64.b64encode(b"api:" + key.encode("utf-8")))[2:-1]
         self.base_url = "https://velodata.app/api/v1/"
+        self.news_url = "https://velodata.app/api/n/"
+        self.news_wss = "wss://wss.velodata.app/api/w/connect"
         self.headers = {"Authorization": self.key}
         self.session = requests.Session()
+        self.news = self
+        self.ws = None
         
     def http_get(self, base_url, headers, params={}):
         request = self.session.get(base_url, params=params, headers=headers)
@@ -27,7 +33,40 @@ class client:
         
     def get_status(self):
         return self.http_get(self.base_url + "status", headers=self.headers)
-        
+
+    def get_news(self, begin=0):
+        request = self.http_get(self.news_url + "news", params={'begin':begin}, headers=self.headers)
+
+        try:
+            return json.loads(request)['stories']
+        except:
+            raise Exception(request.content)
+
+    async def stream_news(self):
+        async with websockets.connect(self.news_wss, extra_headers=self.headers, ssl=True) as websocket:
+            self.ws = websocket
+            await websocket.send('subscribe news_priority')
+
+            yield 'connected'
+            while True:
+                try:
+                    reply = await websocket.recv()
+
+                    if reply == '{"heartbeat":true}':
+                        yield 'heartbeat'
+                    else:
+                        yield reply
+
+                except:
+                    await self.close_stream()
+                    yield 'closed'
+                    return
+
+    async def close_stream(self):
+        if(self.ws):
+            await self.ws.close()
+            self.ws = None
+
     def get_products(self, product_type: str):        
         request = self.session.get(self.base_url + product_type, headers=self.headers).text
         

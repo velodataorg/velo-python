@@ -44,6 +44,7 @@ class client:
 
     async def stream_news(self):
         async with websockets.connect(self.news_wss, extra_headers=self.headers, ssl=True) as websocket:
+            self.ws = websocket
             await websocket.send('subscribe news_priority')
 
             yield 'connected'

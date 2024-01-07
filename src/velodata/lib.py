@@ -58,8 +58,7 @@ class client:
                         yield reply
 
                 except:
-                    await websocket.close()
-                    self.ws = None
+                    await self.close_stream()
                     yield 'closed'
                     return
 

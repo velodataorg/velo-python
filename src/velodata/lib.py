@@ -11,9 +11,9 @@ import websockets
 class client:
     def __init__(self, key):
         self.key = "Basic " + str(base64.b64encode(b"api:" + key.encode("utf-8")))[2:-1]
-        self.base_url = "https://velodata.app/api/v1/"
-        self.news_url = "https://velodata.app/api/n/"
-        self.news_wss = "wss://wss.velodata.app/api/w/connect"
+        self.base_url = "https://api.velodata.app/api/v1/"
+        self.news_url = "https://api.velodata.app/api/n/"
+        self.news_wss = "wss://api.velodata.app/api/w/connect"
         self.headers = {"Authorization": self.key}
         self.session = requests.Session()
         self.news = self

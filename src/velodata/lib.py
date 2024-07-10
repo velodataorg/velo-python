@@ -9,25 +9,28 @@ import json
 import websockets
 
 class client:
-    def __init__(self, key):
+    def __init__(self, key, retry=2):
         self.key = "Basic " + str(base64.b64encode(b"api:" + key.encode("utf-8")))[2:-1]
         self.base_url = "https://api.velodata.app/api/v1/"
         self.news_url = "https://api.velodata.app/api/n/"
         self.news_wss = "wss://api.velodata.app/api/w/connect"
         self.headers = {"Authorization": self.key}
         self.session = requests.Session()
+        self.retry = retry
         self.news = self
         self.ws = None
         
-    def http_get(self, base_url, headers, params={}):
+    def http_get(self, base_url, headers, params={}, again=0):
         request = self.session.get(base_url, params=params, headers=headers)
         code = request.status_code
         
-        if code == 429:
+        if code == 200:
+            return request.text
+        elif code == 429:
             time.sleep(2)
             return self.http_get(base_url, headers, params)
-        elif code == 200:
-            return request.text
+        elif code >= 500 and again < self.retry:
+            return self.http_get(base_url, headers, params, again + 1)
         else:
             raise Exception("status " + str(code) + ": " + request.text)
         

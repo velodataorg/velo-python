@@ -29,18 +29,14 @@ class client:
         elif code == 200:
             return request.text
         else:
-            return request
+            raise Exception("status " + str(code) + ": " + request.text)
         
     def get_status(self):
         return self.http_get(self.base_url + "status", headers=self.headers)
 
     def get_news(self, begin=0):
         request = self.http_get(self.news_url + "news", params={'begin':begin}, headers=self.headers)
-
-        try:
-            return json.loads(request)['stories']
-        except:
-            raise Exception(request.content)
+        return json.loads(request)['stories']
 
     async def stream_news(self):
         async with websockets.connect(self.news_wss, extra_headers=self.headers, ssl=True) as websocket:
@@ -150,7 +146,7 @@ class client:
             except Exception as e:
                 if 'No columns to parse from file' not in str(e):
                     print("Please ensure you have passed all required params properly.")
-                    raise Exception(request.content)
+                    raise e
                 else:
                     yield pd.DataFrame()
             
@@ -166,7 +162,7 @@ class client:
             except Exception as e:
                 if 'No columns to parse from file' not in str(e):
                     print("Please ensure you have passed all required params properly.")
-                    raise Exception(request.content)
+                    raise e
                 else:
                     rows = pd.concat([rows, pd.DataFrame()])
     
@@ -178,9 +174,9 @@ class client:
         try:
             request = self.http_get(self.base_url + 'caps', params=coins, headers=self.headers)
             rows = pd.read_csv(io.StringIO(request))
-        except: 
+        except Exception as e:
             print("Please ensure you have passed all required params properly.")
-            raise Exception(request.content)
+            raise e
 
         return rows
 
@@ -190,9 +186,9 @@ class client:
         try:
             request = self.http_get(self.base_url + 'terms', params=coins, headers=self.headers)
             rows = pd.read_csv(io.StringIO(request))
-        except: 
+        except Exception as e:
             print("Please ensure you have passed all required params properly.")
-            raise Exception(request.content)
+            raise e
 
         return rows
     

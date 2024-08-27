@@ -17,7 +17,7 @@ params = {
       'products': [future['product']],
       'begin': client.timestamp() - 1000 * 60 * 11,
       'end': client.timestamp(),
-      'resolution': 1
+      'resolution': '1m'
     }
     
 # returns dataframe

@@ -72,7 +72,7 @@ class client:
         try:
             return pd.read_csv(io.StringIO(request)).to_dict('records')
         except:
-            print("Please check that you have provided a product_type of futures, spot, or options.")
+            print("\nPlease check that you have provided a product_type of futures, spot, or options.\n")
             raise Exception(request.content)
 
     def get_futures(self):
@@ -83,6 +83,79 @@ class client:
     
     def get_spot(self):
         return self.get_products('spot')
+
+    def add_months(self, dt, months):
+        dt = pd.to_datetime(dt, unit='ms', utc=True)
+        for m in range(months):
+            dt = pd.Period(pd.Period(dt, freq='M').end_time + pd.Timedelta(minutes=1), freq='M').start_time
+
+        dt = (dt - pd.Timestamp("1970-01-01")) // pd.Timedelta('1 milliseconds')
+        return dt
+
+    def align_resolution(self, params: dict):
+        if isinstance(params['resolution'], str) == False:
+            return params
+
+        try:
+            begin = int(params['begin'])
+            end = int(params['end'])
+        except Exception as e:
+            print('\nPlease ensure you have passed begin and end params properly as integers.\n')
+            raise e
+
+        units = {
+            'm': 1000 * 60,
+            'h': 1000 * 60 * 60,
+            'd': 1000 * 60 * 60 * 24,
+            'w': 'w',
+            'M': 'M',
+        }
+
+        reso = params['resolution']
+        try:
+            unit = units[reso[-1]]
+            reso = int(reso[:-1])
+        except Exception as e:
+            print('\nPlease ensure you have passed a valid resolution suffix, like m, h, d, w, or M.\n')
+            raise e
+
+        if isinstance(unit, int):
+            step = reso * unit
+            begin = begin - (begin % step)
+            if end % step != 0:
+                end = step + (end - (end % step)) 
+            reso = (reso * unit) / (1000 * 60)
+        
+            params['resolution'] = reso
+            params['begin'] = begin
+            params['end'] = end
+            return params
+
+        if unit != 'w' and unit != 'M':
+            print('\nPlease ensure you have passed a valid resolution suffix, like m, h, d, w, or M.\n')
+            raise e
+        
+        begin = pd.to_datetime(begin, unit='ms', utc=True)
+        end = pd.to_datetime(end, unit='ms', utc=True)
+
+        if unit == 'w':
+            params['begin'] = pd.Period(begin, freq='W').start_time 
+            if end != pd.Period(end, freq='W').start_time:
+                params['end'] = pd.Period(pd.Period(end, freq='W').end_time + pd.Timedelta(minutes=1), freq='W').start_time
+            reso = 60 * 24 * 7 * reso
+
+        if unit == 'M':
+            params['begin'] = pd.Period(begin, freq='M').start_time 
+            if end != pd.Period(end, freq='M').start_time:
+                params['end'] = pd.Period(pd.Period(end, freq='M').end_time + pd.Timedelta(minutes=1), freq='M').start_time
+            params['months'] = 'true'
+            
+        params['resolution'] = reso
+        params['begin'] = int(params['begin'].timestamp() * 1000)
+        params['end'] = int(params['end'].timestamp() * 1000)
+
+        return params
+
 
     def batch_rows(self, params: dict):
         coins = False
@@ -106,7 +179,7 @@ class client:
         count = (math.ceil((params['end'] - params['begin']) / (1000 * 60 * params['resolution'])) *
                     len_exchanges * len(split_params['products']) * len(params['columns']))
         
-        if count <= 22500:
+        if count <= 22500 and 'months' not in params:
             split_params['columns'] = (",").join(params['columns'])
             split_params['exchanges'] = (",").join(split_params['exchanges'])
             split_params['products'] = (",").join(split_params['products'])
@@ -125,7 +198,11 @@ class client:
         
         batches = []
         step = copy.deepcopy(split_params)
-        step['end'] = step['begin'] + ((1000 * 60 * step['resolution']) * count)
+
+        if('months' in step):
+            step['end'] = self.add_months(step['begin'], params['resolution'])
+        else:
+            step['end'] = step['begin'] + ((1000 * 60 * step['resolution']) * count)
         
         batches.append(step)
         
@@ -135,6 +212,8 @@ class client:
             step['begin'] = begin
             step['end'] = step['begin'] + ((1000 * 60 * params['resolution']) * count)
             step['end'] = round(min(step['end'], params['end']))
+            if 'months' in step:
+                step['end'] = self.add_months(step['begin'], params['resolution'])
             batches.append(step)
 
         return batches
@@ -148,14 +227,14 @@ class client:
                 time.sleep(0.1)
             except Exception as e:
                 if 'No columns to parse from file' not in str(e):
-                    print("Please ensure you have passed all required params properly.")
+                    print("\nPlease ensure you have passed all required params properly.\n")
                     raise e
                 else:
                     yield pd.DataFrame()
             
     def get_rows(self, params: dict):
+        params = self.align_resolution(params)
         batches = self.batch_rows(params)        
-        
         rows = pd.DataFrame()
         for param in batches:            
             try:
@@ -164,7 +243,7 @@ class client:
                 time.sleep(0.1)
             except Exception as e:
                 if 'No columns to parse from file' not in str(e):
-                    print("Please ensure you have passed all required params properly.")
+                    print("\nPlease ensure you have passed all required params properly.\n")
                     raise e
                 else:
                     rows = pd.concat([rows, pd.DataFrame()])
@@ -178,7 +257,7 @@ class client:
             request = self.http_get(self.base_url + 'caps', params=coins, headers=self.headers)
             rows = pd.read_csv(io.StringIO(request))
         except Exception as e:
-            print("Please ensure you have passed all required params properly.")
+            print("\nPlease ensure you have passed all required params properly.\n")
             raise e
 
         return rows
@@ -190,7 +269,7 @@ class client:
             request = self.http_get(self.base_url + 'terms', params=coins, headers=self.headers)
             rows = pd.read_csv(io.StringIO(request))
         except Exception as e:
-            print("Please ensure you have passed all required params properly.")
+            print("\nPlease ensure you have passed all required params properly.\n")
             raise e
 
         return rows

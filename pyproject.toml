@@ -1,0 +1,28 @@
+[build-system]
+requires = ["pdm-backend", "pandas", "requests", "websockets", "asyncio"]
+build-backend = "pdm.backend"
+
+[project]
+name = "velodata"
+version = "1.5.0"
+authors = [
+  { name="Velo Data", email="support@velodata.app" },
+]
+dependencies = [
+  "pandas",
+  "requests",
+  "websockets",
+  "asyncio"
+]
+description = "Python library for interacting with the Velo Data API"
+readme = "README.md"
+requires-python = ">=3.0"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+"GitHub" = "https://github.com/velodataorg/velo-python"
+"Docs" = "https://velodata.gitbook.io/velo-data-api/python"

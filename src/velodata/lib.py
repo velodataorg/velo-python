@@ -21,7 +21,7 @@ class client:
         self.ws = None
 
     def version(self):
-        return '1.5.2'
+        return '1.5.3'
         
     def http_get(self, base_url, headers, params={}, again=0):
         request = self.session.get(base_url, params=params, headers=headers)
@@ -303,6 +303,7 @@ class client:
             'dollar_open_interest_low',
             'dollar_open_interest_close',
             'funding_rate',
+            'funding_rate_avg',
             'premium',
             'buy_liquidations',
             'sell_liquidations',

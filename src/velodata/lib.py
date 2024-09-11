@@ -21,7 +21,7 @@ class client:
         self.ws = None
 
     def version(self):
-        return '1.5.3'
+        return '1.5.4'
         
     def http_get(self, base_url, headers, params={}, again=0):
         request = self.session.get(base_url, params=params, headers=headers)

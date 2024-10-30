@@ -161,6 +161,7 @@ class client:
 
 
     def batch_rows(self, params: dict):
+        params = self.align_resolution(params)
         coins = False
 
         split_params = copy.deepcopy(params)

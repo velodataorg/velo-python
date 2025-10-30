@@ -280,22 +280,20 @@ class client:
         return rows
 
     def batch_depth(self, params: dict):
-        try:
-            begin = int(params['begin'])
-            end = int(params['end'])
-            resolution = int(params['resolution'])
-        except Exception as e:
-            print('\nPlease ensure you have passed begin, end, and resolution params properly as integers.\n')
-            raise e
+        params = self.align_resolution(params)
+        begin = int(params['begin'])
+        end = int(params['end'])
+        resolution = int(params['resolution'])
 
         if resolution not in [1, 5, 10, 15, 30, 60] and resolution % 60 != 0:
-            raise Exception('Resolution must be 1, 5, 10, 15, 30, 60, or multiple of 60.')
+            raise Exception('Resolution (in minutes) must be 1, 5, 10, 15, 30, 60, or multiple of 60.')
 
         res = []
         step = { 
             'reso': resolution,
             'begin': begin,
-            'end': end
+            'end': end,
+            'forward': 1
         }
 
         if 'coin' in params:

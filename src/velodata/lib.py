@@ -295,10 +295,16 @@ class client:
         step = { 
             'reso': resolution,
             'begin': begin,
-            'end': end,
-            'product': params['product'],
-            'exchange': params['exchange']
+            'end': end
         }
+
+        if 'coin' in params:
+            step['coin'] = params['coin']
+        elif 'product' in params and 'exchange' in params:
+            step['product'] = params['product']
+            step['exchange'] = params['exchange']
+        else:
+            raise Exception('Pass coin param for aggregated values, or product and exchange param.')
 
         minutes = (end - begin) / 1000 * 60
         count = minutes / resolution
@@ -347,7 +353,7 @@ class client:
                     
                 time.sleep(0.1)
             except Exception as e:
-                print("\nPlease ensure you have passed all required params properly.\n")
+                print("\nPlease ensure you have passed all required params properly and that the specified coin or product supports orderbook data.\n")
                 raise e
 
     

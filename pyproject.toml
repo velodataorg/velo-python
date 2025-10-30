@@ -4,7 +4,7 @@ build-backend = "pdm.backend"
 
 [project]
 name = "velodata"
-version = "1.5.5"
+version = "1.7.0"
 authors = [
   { name="Velo Data", email="support@velodata.app" },
 ]

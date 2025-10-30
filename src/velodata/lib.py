@@ -13,6 +13,7 @@ class client:
         self.key = "Basic " + str(base64.b64encode(b"api:" + key.encode("utf-8")))[2:-1]
         self.base_url = "https://api.velo.xyz/api/v1/"
         self.news_url = "https://api.velo.xyz/api/n/"
+        self.depth_url = "https://api.velo.xyz/api/l/"
         self.news_wss = "wss://api.velo.xyz/api/w/connect"
         self.headers = {"Authorization": self.key}
         self.session = requests.Session()
@@ -277,7 +278,82 @@ class client:
             raise e
 
         return rows
-    
+
+    def batch_depth(self, params: dict):
+        params = self.align_resolution(params)
+        begin = int(params['begin'])
+        end = int(params['end'])
+        resolution = int(params['resolution'])
+
+        if resolution not in [1, 5, 10, 15, 30, 60] and resolution % 60 != 0:
+            raise Exception('Resolution (in minutes) must be 1, 5, 10, 15, 30, 60, or multiple of 60.')
+
+        res = []
+        step = { 
+            'reso': resolution,
+            'begin': begin,
+            'end': end,
+            'forward': 1
+        }
+
+        if 'coin' in params:
+            step['coin'] = params['coin']
+        elif 'product' in params and 'exchange' in params:
+            step['product'] = params['product']
+            step['exchange'] = params['exchange']
+        else:
+            raise Exception('Pass coin param for aggregated values, or product and exchange param.')
+
+        minutes = (end - begin) / 1000 * 60
+        count = minutes / resolution
+        max_count = 251
+
+        if count <= max_count:
+            return [step]
+
+        step['end'] = begin + ((1000 * 60 * resolution) * max_count)
+        res.append(step)
+
+        while step['end'] < end: 
+            step = copy.deepcopy(step)
+            step['begin'] = step['end']
+            step['end'] = step['begin'] + ((1000 * 60 * resolution) * max_count)
+            step['end'] = min(step['end'], end)
+            res.append(step)
+        
+        return res
+
+    def depth(self, params: dict):
+        batches = self.batch_depth(params)
+        
+        for param in batches:
+            try:
+                request = self.http_get(self.depth_url + 'levels', params=param, headers=self.headers)
+                request = request.split('\n')[1:-1]
+
+                if request == []:
+                    yield {}
+                    continue 
+                
+                for timestep in request:
+                    obj = {}
+                    timestep = timestep.split(',')
+                    
+                    timestep = [float(i) for i in timestep]
+                    
+                    obj['timestamp'] = timestep[0]
+                    obj['midprice'] = timestep[1] 
+
+                    for value in range(2, len(timestep)-2, 2):
+                        obj[timestep[value]] = timestep[value+1]
+
+                    yield obj
+                    
+                time.sleep(0.1)
+            except Exception as e:
+                print("\nPlease ensure you have passed all required params properly and that the specified coin or product supports orderbook data.\n")
+                raise e
+
     
     def timestamp(self):
         return math.floor(time.time() * 1000)
